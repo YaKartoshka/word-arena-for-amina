@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Arena for Amina — Vocabulary Quiz</title>
+<style>
+  :root{
+    --bg-0:#150C2B;
+    --bg-1:#211238;
+    --bg-2:#2B1750;
+    --coral:#FF5C6C;
+    --gold:#FFC857;
+    --teal:#2FD9C6;
+    --blue:#5B7CFA;
+    --text:#F4F1FF;
+    --muted:#B6A9E0;
+    --good:#3FDD8B;
+    --bad:#FF5C6C;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:
+      radial-gradient(circle at 15% 8%, rgba(91,124,250,0.25), transparent 40%),
+      radial-gradient(circle at 85% 92%, rgba(255,92,108,0.2), transparent 45%),
+      var(--bg-0);
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  #app{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    width:100%;
+    max-width:760px;
+    background:linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    border-radius:24px;
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 30px 80px -20px rgba(0,0,0,0.6);
+    padding:36px 32px;
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:"";
+    position:absolute;
+    top:-60px;right:-60px;
+    width:220px;height:220px;
+    background:radial-gradient(circle, rgba(255,200,87,0.15), transparent 70%);
+    pointer-events:none;
+  }
+
+  /* ---------- START SCREEN ---------- */
+  .eyebrow{
+    text-transform:uppercase;
+    letter-spacing:0.18em;
+    font-size:12px;
+    font-weight:700;
+    color:var(--gold);
+    margin-bottom:10px;
+  }
+  h1{
+    font-size:clamp(30px,5vw,44px);
+    line-height:1.05;
+    margin:0 0 12px 0;
+    font-weight:800;
+    letter-spacing:-0.01em;
+  }
+  h1 span{color:var(--teal);}
+  .lede{
+    color:var(--muted);
+    font-size:16px;
+    line-height:1.55;
+    max-width:520px;
+    margin-bottom:26px;
+  }
+  .word-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:30px;
+  }
+  .chip{
+    font-size:12.5px;
+    font-weight:600;
+    padding:6px 12px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1);
+    color:var(--muted);
+  }
+  .btn-primary{
+    appearance:none;
+    border:none;
+    cursor:pointer;
+    background:linear-gradient(135deg, var(--teal), var(--blue));
+    color:#0E0A22;
+    font-weight:800;
+    font-size:17px;
+    padding:16px 30px;
+    border-radius:14px;
+    box-shadow:0 10px 30px -8px rgba(47,217,198,0.5);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 34px -6px rgba(47,217,198,0.6);}
+  .btn-primary:active{transform:translateY(0px) scale(.98);}
+
+  /* ---------- QUESTION SCREEN ---------- */
+  .hud{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+    gap:16px;
+  }
+  .hud-stat{
+    font-size:13px;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .hud-stat b{color:var(--text);font-size:15px;}
+  .timer-wrap{
+    height:8px;
+    width:100%;
+    background:rgba(255,255,255,0.08);
+    border-radius:999px;
+    overflow:hidden;
+    margin-bottom:22px;
+  }
+  .timer-bar{
+    height:100%;
+    width:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg, var(--teal), var(--gold));
+    transform-origin:left;
+  }
+  .category-tag{
+    display:inline-block;
+    font-size:11.5px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    padding:5px 10px;
+    border-radius:8px;
+    margin-bottom:14px;
+  }
+  .tag-translate{background:rgba(91,124,250,0.2);color:#9AB0FF;}
+  .tag-synonym{background:rgba(47,217,198,0.18);color:#7CEFDE;}
+  .tag-usage{background:rgba(255,200,87,0.18);color:#FFD98A;}
+  .tag-meaning{background:rgba(255,92,108,0.18);color:#FF9AA5;}
+
+  .question-text{
+    font-size:clamp(20px,3vw,25px);
+    font-weight:700;
+    line-height:1.4;
+    margin:0 0 26px 0;
+  }
+  .question-text em{color:var(--gold);font-style:normal;}
+
+  .answers{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  @media (max-width:560px){
+    .answers{grid-template-columns:1fr;}
+  }
+  .answer-btn{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    text-align:left;
+    border:none;
+    cursor:pointer;
+    color:#fff;
+    font-weight:700;
+    font-size:15.5px;
+    padding:16px 16px;
+    border-radius:14px;
+    line-height:1.3;
+    transition:transform .12s ease, filter .12s ease;
+  }
+  .answer-btn:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  .answer-btn:disabled{cursor:default;}
+  .answer-shape{
+    flex:0 0 auto;
+    width:22px;height:22px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;
+    opacity:0.9;
+  }
+  .a0{background:linear-gradient(135deg,#FF5C6C,#E14355);}
+  .a1{background:linear-gradient(135deg,#5B7CFA,#3E5CD8);}
+  .a2{background:linear-gradient(135deg,#FFC857,#E8A93A);color:#241238;}
+  .a3{background:linear-gradient(135deg,#2FD9C6,#1BB6A6);}
+
+  .answer-btn.correct{
+    box-shadow:0 0 0 3px var(--good), 0 10px 24px -6px rgba(63,221,139,0.5);
+  }
+  .answer-btn.wrong{
+    box-shadow:0 0 0 3px var(--bad), 0 10px 24px -6px rgba(255,92,108,0.5);
+    opacity:0.6;
+  }
+  .answer-btn.dim{opacity:0.45;}
+
+  .feedback{
+    margin-top:18px;
+    font-size:14.5px;
+    font-weight:600;
+    min-height:22px;
+    color:var(--muted);
+  }
+  .feedback.good{color:var(--good);}
+  .feedback.bad{color:var(--bad);}
+
+  /* Momentum meter — signature element */
+  .momentum-wrap{
+    margin-top:26px;
+  }
+  .momentum-label{
+    display:flex;
+    justify-content:space-between;
+    font-size:11.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .momentum-track{
+    height:10px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.06);
+    overflow:hidden;
+    display:flex;
+  }
+  .momentum-seg{
+    flex:1;
+    margin-right:3px;
+    border-radius:3px;
+    background:rgba(255,255,255,0.08);
+    transition:background .3s ease;
+  }
+  .momentum-seg:last-child{margin-right:0;}
+  .momentum-seg.lit{
+    background:linear-gradient(90deg, var(--teal), var(--gold));
+  }
+
+  /* ---------- END SCREEN ---------- */
+  .rank-badge{
+    display:inline-block;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    padding:6px 14px;
+    border-radius:999px;
+    background:linear-gradient(135deg, var(--gold), var(--coral));
+    color:#241238;
+    margin-bottom:16px;
+  }
+  .score-big{
+    font-size:clamp(48px,9vw,72px);
+    font-weight:800;
+    line-height:1;
+    margin:6px 0 4px 0;
+    background:linear-gradient(135deg, var(--teal), var(--blue));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .score-sub{color:var(--muted);font-size:15px;margin-bottom:26px;}
+  .review-list{
+    max-height:260px;
+    overflow-y:auto;
+    margin:0 0 26px 0;
+    padding-right:4px;
+  }
+  .review-item{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 0;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    font-size:13.5px;
+  }
+  .review-item:last-child{border-bottom:none;}
+  .review-q{color:var(--text);font-weight:600;}
+  .review-mark{font-weight:800;flex:0 0 auto;}
+  .review-mark.ok{color:var(--good);}
+  .review-mark.no{color:var(--bad);}
+  .end-actions{display:flex;gap:12px;flex-wrap:wrap;}
+  .btn-secondary{
+    appearance:none;
+    border:1px solid rgba(255,255,255,0.15);
+    background:transparent;
+    color:var(--text);
+    font-weight:700;
+    font-size:15px;
+    padding:14px 22px;
+    border-radius:12px;
+    cursor:pointer;
+  }
+  .btn-secondary:hover{background:rgba(255,255,255,0.06);}
+
+  .hidden{display:none !important;}
+
+  .music-toggle{
+    position:fixed;
+    top:18px;
+    right:18px;
+    z-index:50;
+    width:44px;
+    height:44px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.06);
+    backdrop-filter:blur(6px);
+    color:var(--text);
+    font-size:18px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .music-toggle:hover{background:rgba(255,255,255,0.12);transform:translateY(-1px);}
+  .music-toggle.muted{color:var(--muted);}
+</style>
+</head>
+<body>
+<button class="music-toggle" id="music-toggle" title="Toggle music" aria-label="Toggle background music">🔊</button>
+<audio id="bg-music" src="seasons.mp3" loop preload="auto"></audio>
+
+<div id="app">
+
+  <!-- START SCREEN -->
+  <div class="card" id="screen-start">
+    <div class="eyebrow">Vocabulary Sprint</div>
+    <h1>Word <span>Arena</span> for Amina</h1>
+    <p class="lede">
+      Fast questions on 19 words from the "measures / mitigate / consolidate" set and the HUGE group
+      (paramount, ample, profound, manifold…). Translate, spot the synonym, and complete the sentence —
+      speed and streaks earn bonus points.
+    </p>
+    <div class="word-chips">
+      <span class="chip">paramount</span>
+      <span class="chip">ample</span>
+      <span class="chip">profound</span>
+      <span class="chip">incremental</span>
+      <span class="chip">unprecedented</span>
+      <span class="chip">manifold</span>
+      <span class="chip">predominantly</span>
+      <span class="chip">tremendous</span>
+      <span class="chip">retain</span>
+      <span class="chip">mitigate</span>
+      <span class="chip">consolidate</span>
+      <span class="chip">bolster</span>
+      <span class="chip">+ more</span>
+    </div>
+    <button class="btn-primary" id="btn-start">Start the sprint →</button>
+  </div>
+
+  <!-- QUESTION SCREEN -->
+  <div class="card hidden" id="screen-question">
+    <div class="hud">
+      <div class="hud-stat">Question <b id="q-index">1</b>/<span id="q-total">1</span></div>
+      <div class="hud-stat">Score <b id="q-score">0</b></div>
+      <div class="hud-stat">Streak <b id="q-streak">0</b>🔥</div>
+    </div>
+    <div class="timer-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+    <span class="category-tag" id="category-tag">Translation</span>
+    <p class="question-text" id="question-text">Loading…</p>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="momentum-wrap">
+      <div class="momentum-label"><span>Momentum</span><span id="momentum-pct">0%</span></div>
+      <div class="momentum-track" id="momentum-track"></div>
+    </div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div class="card hidden" id="screen-end">
+    <div class="rank-badge" id="rank-badge">Rank</div>
+    <div class="score-big" id="final-score">0</div>
+    <div class="score-sub" id="final-sub">correct answers</div>
+    <div class="review-list" id="review-list"></div>
+    <div class="end-actions">
+      <button class="btn-primary" id="btn-restart">Play again</button>
+      <button class="btn-secondary" id="btn-restart-shuffle">Shuffle & replay</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+
+  // ---------------------------------------------------------------
+  // QUESTION BANK
+  // ---------------------------------------------------------------
+  const QUESTIONS = [
+    // ---- Translation (word -> Russian meaning) ----
+    { cat:"translate", q:"What is the Russian meaning of <em>paramount</em>?",
+      options:["важнейший, первостепенный","обильный, богатый","возрастающий","разнообразный"], correct:0 },
+    { cat:"translate", q:"What is the Russian meaning of <em>ample</em>?",
+      options:["невиданный","обильный, богатый, обширный","глубокий","главным образом"], correct:1 },
+    { cat:"translate", q:"What is the Russian meaning of <em>profound</em>?",
+      options:["огромный","возрастающий","глубокий","полностью"], correct:2 },
+    { cat:"translate", q:"What is the Russian meaning of <em>incremental</em>?",
+      options:["возрастающий","беспрецедентный","необычный","главным образом"], correct:0 },
+    { cat:"translate", q:"What is the Russian meaning of <em>unprecedented</em>?",
+      options:["обильный","невиданный, беспрецедентный","тщательно","разнообразный"], correct:1 },
+    { cat:"translate", q:"What is the Russian meaning of <em>manifold</em>?",
+      options:["важнейший","огромный","разнообразный","полностью"], correct:2 },
+    { cat:"translate", q:"What is the Russian meaning of <em>predominantly</em>?",
+      options:["главным образом","необычный","обильный","возрастающий"], correct:0 },
+    { cat:"translate", q:"What is the Russian meaning of <em>tremendous</em>?",
+      options:["тщательно","огромный, внушительный","глубокий","разнообразный"], correct:1 },
+    { cat:"translate", q:"What is the Russian meaning of <em>thoroughly</em>?",
+      options:["полностью, тщательно","необычный","главным образом","важнейший"], correct:0 },
+    { cat:"translate", q:"What is the Russian meaning of <em>extraordinary</em>?",
+      options:["возрастающий","необычный, исключительный","обильный","глубокий"], correct:1 },
+
+    // ---- Synonym matching ----
+    { cat:"synonym", q:"Choose the closest synonym to <em>to retain</em>",
+      options:["to preserve","to obtain","to attain","to maintain in size only"], correct:0 },
+    { cat:"synonym", q:"Choose the closest synonym to <em>to mitigate</em>",
+      options:["to decline","to reduce","to save entirely","to cancel"], correct:1 },
+    { cat:"synonym", q:"Choose the closest synonym to <em>to consolidate</em>",
+      options:["to cooperate","to collocate","to strengthen","to collaborate"], correct:2 },
+    { cat:"synonym", q:"Choose the closest synonym to <em>to bolster</em>",
+      options:["to discourage","to simulate","to stimulate","to cancel"], correct:2 },
+    { cat:"synonym", q:"Choose the closest synonym to <em>to take measures</em>",
+      options:["to measure a problem","to participate passively","to undertake something to tackle a problem","to ignore an issue"], correct:2 },
+    { cat:"synonym", q:"Which word means roughly the same as <em>manifold</em>?",
+      options:["of many kinds","substantial","considerable","precise"], correct:0 },
+    { cat:"synonym", q:"Which word means roughly the same as <em>paramount</em>?",
+      options:["abundant","of the highest importance","giant","plentiful"], correct:1 },
+    { cat:"synonym", q:"Which word means roughly the same as <em>unprecedented</em>?",
+      options:["incremental","big","unique / never seen before","predictable"], correct:2 },
+
+    // ---- Sentence completion (usage) ----
+    { cat:"usage", q:"Belgium was able to ___ its dominating position in worldwide chocolate production.",
+      options:["retain","abolish","tackle","mitigate"], correct:0 },
+    { cat:"usage", q:"A number of ___ have to be taken to support the development of agriculture.",
+      options:["retentions","measures","consolidations","tremendousness"], correct:1 },
+    { cat:"usage", q:"It is crucial to ___ this problem as soon as possible to avoid damage.",
+      options:["tackle","abolish","retain","couple"], correct:0 },
+    { cat:"usage", q:"These measures should be able to ___ the issue of excessive waste nowadays.",
+      options:["mitigate slightly","rectify","bolster","abolish"], correct:1 },
+    { cat:"usage", q:"City authorities should ___ car traffic in some streets and make them pedestrian-friendly.",
+      options:["bolster","support","abolish","couple"], correct:2 },
+    { cat:"usage", q:"It is vital to ___ the political tension between the two countries.",
+      options:["mitigate","consolidate","bolster","retain"], correct:0 },
+    { cat:"usage", q:"These supportive governmental actions will ___ production and encourage investment.",
+      options:["mitigate","bolster","abolish","tackle"], correct:1 },
+    { cat:"usage", q:"Company X ___ its market position in 2007 by reaching $1.5 billion in sales.",
+      options:["consolidated","mitigated","abolished","tackled"], correct:0 },
+    { cat:"usage", q:"Young families should receive ___ support, from a child's birth to their first school days.",
+      options:["incremental","seamless","paramount","manifold"], correct:1 },
+    { cat:"usage", q:"State policy has to be ___ with profound research to stop this trend.",
+      options:["coupled","abolished","retained","mitigated"], correct:0 },
+
+    // ---- Meaning-in-context (closest paraphrase) ----
+    { cat:"meaning", q:"\"The Olympic Committee accumulates <em>ample</em> funds for new facilities.\" This means the committee...",
+      options:["collects a sufficient/large amount of money","collects a tiny amount of money","spends money quickly","refuses funding"], correct:0 },
+    { cat:"meaning", q:"\"These works of art produce a <em>profound</em> impression on art lovers.\" This means they...",
+      options:["cause a deep, strong impression","cause a brief impression","cause no impression","cause a negative impression"], correct:0 },
+    { cat:"meaning", q:"\"Communication has a <em>paramount</em> influence on behavior.\" This means the influence is...",
+      options:["minor","the highest, most important","occasional","doubtful"], correct:1 },
+    { cat:"meaning", q:"\"The environment <em>tremendously</em> influences personalities.\" This means it influences...",
+      options:["enormously","barely","predictably","incrementally only"], correct:0 },
+    { cat:"meaning", q:"\"<em>Manifold</em> opportunities are open to English learners.\" This means the opportunities are...",
+      options:["single and rare","multiple and varied","expensive","theoretical"], correct:1 },
+    { cat:"meaning", q:"\"The <em>incremental</em> climate change worries experts.\" This describes change that is...",
+      options:["gradual, growing step by step","instant","reversible","imaginary"], correct:0 },
+    { cat:"meaning", q:"\"There should be a <em>thorough</em> understanding of climate change.\" This means the understanding should be...",
+      options:["superficial","full and in-depth","optional","emotional"], correct:1 },
+    { cat:"meaning", q:"\"Many cities take <em>unprecedented</em> security measures.\" This means the measures are...",
+      options:["routine and expected","never done before","cheap","temporary"], correct:1 },
+    { cat:"meaning", q:"\"The 20th century saw <em>extraordinary</em> changes in all spheres of life.\" This means the changes were...",
+      options:["exceptional, remarkable","minimal","predictable","gradual only"], correct:0 },
+    { cat:"meaning", q:"\"Children <em>predominantly</em> acquire eating habits at home.\" This means they...",
+      options:["mainly learn eating habits at home","never learn eating habits at home","occasionally learn them at home","only learn cooking at home"], correct:0 },
+  ];
+
+  const CAT_LABEL = {
+    translate: { label:"Translation", cls:"tag-translate" },
+    synonym:   { label:"Synonym",     cls:"tag-synonym" },
+    usage:     { label:"Complete the sentence", cls:"tag-usage" },
+    meaning:   { label:"Meaning in context", cls:"tag-meaning" },
+  };
+
+  const TIME_LIMIT_MS = 14000;
+  const MOMENTUM_SEGMENTS = 10;
+  const ANSWER_SHAPES = ["▲","◆","●","■"];
+
+  // ---------------------------------------------------------------
+  // STATE
+  // ---------------------------------------------------------------
+  let order = [];
+  let currentIndex = 0;
+  let score = 0;
+  let streak = 0;
+  let correctCount = 0;
+  let review = [];
+  let timerHandle = null;
+  let timeLeft = TIME_LIMIT_MS;
+  let answered = false;
+
+  const el = id => document.getElementById(id);
+
+  // ---------------------------------------------------------------
+  // BACKGROUND MUSIC
+  // ---------------------------------------------------------------
+  const music = el("bg-music");
+  const musicBtn = el("music-toggle");
+  let musicMuted = false;
+
+  music.volume = 0.35;
+
+  function tryPlayMusic(){
+    if(musicMuted) return;
+    const playPromise = music.play();
+    if(playPromise !== undefined){
+      playPromise.catch(() => {
+        // Autoplay blocked or file missing (e.g. seasons.mp3 not added yet) — fail silently.
+      });
+    }
+  }
+
+  musicBtn.addEventListener("click", () => {
+    musicMuted = !musicMuted;
+    if(musicMuted){
+      music.pause();
+      musicBtn.textContent = "🔇";
+      musicBtn.classList.add("muted");
+    } else {
+      musicBtn.textContent = "🔊";
+      musicBtn.classList.remove("muted");
+      tryPlayMusic();
+    }
+  });
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  function shuffleQuestionOptions(question){
+    const opts = question.options.map((text, i) => ({ text, isCorrect: i === question.correct }));
+    const shuffled = shuffle(opts);
+    return {
+      cat: question.cat,
+      q: question.q,
+      options: shuffled.map(o => o.text),
+      correct: shuffled.findIndex(o => o.isCorrect),
+    };
+  }
+
+  function startGame(shuffleOptions){
+    order = shuffle(QUESTIONS).map(q => shuffleOptions ? shuffleQuestionOptions(q) : q);
+    currentIndex = 0;
+    score = 0;
+    streak = 0;
+    correctCount = 0;
+    review = [];
+    show("screen-question");
+    el("q-total").textContent = order.length;
+    renderQuestion();
+  }
+
+  function show(id){
+    ["screen-start","screen-question","screen-end"].forEach(s => {
+      el(s).classList.toggle("hidden", s !== id);
+    });
+  }
+
+  function renderMomentum(){
+    const track = el("momentum-track");
+    track.innerHTML = "";
+    const lit = Math.min(MOMENTUM_SEGMENTS, streak);
+    for(let i=0;i<MOMENTUM_SEGMENTS;i++){
+      const seg = document.createElement("div");
+      seg.className = "momentum-seg" + (i < lit ? " lit" : "");
+      track.appendChild(seg);
+    }
+    el("momentum-pct").textContent = Math.min(100, Math.round((streak/MOMENTUM_SEGMENTS)*100)) + "%";
+  }
+
+  function renderQuestion(){
+    answered = false;
+    const question = order[currentIndex];
+    el("q-index").textContent = currentIndex + 1;
+    el("q-score").textContent = score;
+    el("q-streak").textContent = streak;
+    el("feedback").textContent = "";
+    el("feedback").className = "feedback";
+
+    const tagInfo = CAT_LABEL[question.cat];
+    const tag = el("category-tag");
+    tag.textContent = tagInfo.label;
+    tag.className = "category-tag " + tagInfo.cls;
+
+    el("question-text").innerHTML = question.q;
+
+    const answersWrap = el("answers");
+    answersWrap.innerHTML = "";
+    question.options.forEach((opt, i) => {
+      const btn = document.createElement("button");
+      btn.className = "answer-btn a" + i;
+      btn.innerHTML = `<span class="answer-shape">${ANSWER_SHAPES[i]}</span><span>${opt}</span>`;
+      btn.addEventListener("click", () => handleAnswer(i, btn));
+      answersWrap.appendChild(btn);
+    });
+
+    renderMomentum();
+    startTimer();
+  }
+
+  function startTimer(){
+    clearInterval(timerHandle);
+    timeLeft = TIME_LIMIT_MS;
+    const bar = el("timer-bar");
+    bar.style.transition = "none";
+    bar.style.width = "100%";
+    // force reflow so the transition applies next frame
+    void bar.offsetWidth;
+    bar.style.transition = `width ${TIME_LIMIT_MS}ms linear`;
+    bar.style.width = "0%";
+
+    timerHandle = setInterval(() => {
+      timeLeft -= 100;
+      if(timeLeft <= 0){
+        clearInterval(timerHandle);
+        if(!answered) handleTimeout();
+      }
+    }, 100);
+  }
+
+  function handleTimeout(){
+    answered = true;
+    const question = order[currentIndex];
+    streak = 0;
+    review.push({ q: stripTags(question.q), ok:false });
+    revealCorrect(question, null);
+    el("feedback").textContent = "⏱ Time's up — the right answer is highlighted.";
+    el("feedback").classList.add("bad");
+    scheduleNext();
+  }
+
+  function handleAnswer(i, btnEl){
+    if(answered) return;
+    answered = true;
+    clearInterval(timerHandle);
+    el("timer-bar").style.transition = "none";
+
+    const question = order[currentIndex];
+    const isCorrect = i === question.correct;
+
+    if(isCorrect){
+      correctCount++;
+      streak++;
+      const fraction = Math.max(0, timeLeft) / TIME_LIMIT_MS;
+      const points = Math.round(500 + fraction * 500 + Math.min(streak,10) * 20);
+      score += points;
+      el("feedback").textContent = `✓ Correct! +${points} points`;
+      el("feedback").classList.add("good");
+    } else {
+      streak = 0;
+      el("feedback").textContent = "✗ Not quite — correct answer highlighted.";
+      el("feedback").classList.add("bad");
+    }
+
+    review.push({ q: stripTags(question.q), ok:isCorrect });
+    revealCorrect(question, i);
+    el("q-score").textContent = score;
+    el("q-streak").textContent = streak;
+    renderMomentum();
+    scheduleNext();
+  }
+
+  function revealCorrect(question, chosenIndex){
+    const buttons = el("answers").querySelectorAll(".answer-btn");
+    buttons.forEach((btn, i) => {
+      btn.disabled = true;
+      if(i === question.correct){
+        btn.classList.add("correct");
+      } else if(i === chosenIndex){
+        btn.classList.add("wrong");
+      } else {
+        btn.classList.add("dim");
+      }
+    });
+  }
+
+  function stripTags(html){
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return tmp.textContent;
+  }
+
+  function scheduleNext(){
+    setTimeout(() => {
+      currentIndex++;
+      if(currentIndex >= order.length){
+        renderEnd();
+      } else {
+        renderQuestion();
+      }
+    }, 1600);
+  }
+
+  function renderEnd(){
+    show("screen-end");
+    const pct = Math.round((correctCount / order.length) * 100);
+    let rank;
+    if(pct >= 90) rank = "Extraordinary 🏆";
+    else if(pct >= 70) rank = "Tremendous effort";
+    else if(pct >= 50) rank = "Ample progress";
+    else rank = "Incremental gains — consolidate & retry";
+
+    el("rank-badge").textContent = rank;
+    el("final-score").textContent = score;
+    el("final-sub").textContent = `${correctCount}/${order.length} correct · ${pct}% accuracy`;
+
+    const list = el("review-list");
+    list.innerHTML = "";
+    review.forEach(r => {
+      const row = document.createElement("div");
+      row.className = "review-item";
+      row.innerHTML = `<span class="review-q">${r.q}</span><span class="review-mark ${r.ok ? "ok":"no"}">${r.ok ? "✓":"✗"}</span>`;
+      list.appendChild(row);
+    });
+  }
+
+  el("btn-start").addEventListener("click", () => { tryPlayMusic(); startGame(false); });
+  el("btn-restart").addEventListener("click", () => startGame(false));
+  el("btn-restart-shuffle").addEventListener("click", () => startGame(true));
+
+})();
+</script>
+</body>
+</html>
